@@ -1,0 +1,41 @@
+name: Build Dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'v4_payload.txt'
+      - '.github/workflows/build-dashboard.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Decode V4 dashboard
+        run: |
+          python - <<'PY'
+          import base64, gzip
+          from pathlib import Path
+          payload = Path('v4_payload.txt').read_text(encoding='utf-8').strip()
+          html = gzip.decompress(base64.b64decode(payload))
+          Path('index.html').write_bytes(html)
+          print(f'Generated index.html: {len(html):,} bytes')
+          PY
+
+      - name: Commit generated dashboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No dashboard changes to commit."
+          else
+            git commit -m "Build V4 dashboard as standalone index.html"
+            git push
+          fi
