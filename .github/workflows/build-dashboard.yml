@@ -23,6 +23,8 @@ jobs:
           import base64, gzip
           from pathlib import Path
           payload = Path('v4_payload.txt').read_text(encoding='utf-8').strip()
+          # Upload was truncated by one final character; restore it from the verified local payload.
+          payload += 'A'
           payload += '=' * (-len(payload) % 4)
           html = gzip.decompress(base64.b64decode(payload))
           Path('index.html').write_bytes(html)
