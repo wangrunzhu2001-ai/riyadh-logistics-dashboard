@@ -21,15 +21,16 @@ jobs:
       - name: Decode V4 dashboard
         run: |
           python - <<'PY'
-          import base64, gzip
+          import base64, gzip, hashlib
           from pathlib import Path
           payload = Path('v4_payload.txt').read_text(encoding='utf-8').strip()
-          # Restore the final payload character from the verified V4 source.
-          payload += 'A'
-          payload += '=' * (-len(payload) % 4)
           html = gzip.decompress(base64.b64decode(payload))
+          expected = '92e4107d242ccd516f441a26ce32c62f04421b04b8405df20b9f2ea968543f2b'
+          actual = hashlib.sha256(html).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'V4 hash mismatch: {actual}')
           Path('index.html').write_bytes(html)
-          print(f'Generated index.html: {len(html):,} bytes')
+          print(f'Generated exact V4 index.html: {len(html):,} bytes; sha256={actual}')
           PY
 
       - name: Commit generated dashboard
@@ -40,6 +41,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No dashboard changes to commit."
           else
-            git commit -m "Build V4 dashboard as standalone index.html"
+            git commit -m "Publish exact V4 dashboard"
             git push
           fi
