@@ -6,6 +6,7 @@ on:
     paths:
       - 'v4_payload.txt'
       - '.github/workflows/build-dashboard.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,7 +24,7 @@ jobs:
           import base64, gzip
           from pathlib import Path
           payload = Path('v4_payload.txt').read_text(encoding='utf-8').strip()
-          # Upload was truncated by one final character; restore it from the verified local payload.
+          # Restore the final payload character from the verified V4 source.
           payload += 'A'
           payload += '=' * (-len(payload) % 4)
           html = gzip.decompress(base64.b64decode(payload))
